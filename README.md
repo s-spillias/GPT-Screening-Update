@@ -1,4 +1,4 @@
-# CI-Review: Collaborative Intelligence Paper Review System
+# GPT-Screening-Update: Collaborative Intelligence Paper Review System
 
 A web-based system for automated paper screening using various AI models. The system allows you to upload papers, define screening criteria, and use AI agents to assess papers based on those criteria.
 
@@ -31,8 +31,8 @@ A web-based system for automated paper screening using various AI models. The sy
 
 1. Clone the repository:
 ```bash
-git clone [repository-url]
-cd CI-Review
+git clone https://github.com/s-spillias/GPT-Screening-Update.git
+cd GPT-Screening-Update
 ```
 
 2. Install dependencies:
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 ```
 
 3. Set up API keys:
-The system supports various AI models. Add your API keys to a `.env` file:
+The system supports various AI models. Create a `.env` file in the root directory and add your API keys:
 ```env
 # For OpenAI
 OPENAI_API_KEY=your_key_here
@@ -59,6 +59,7 @@ ANTHROPIC_API_KEY=your_key_here
 AWS_ACCESS_KEY_ID=your_key_here
 AWS_SECRET_ACCESS_KEY=your_key_here
 ```
+Note: The `.env` file is not included in the repository for security reasons. Make sure to create it locally and never commit it to version control.
 
 ## Usage
 
@@ -74,34 +75,32 @@ This will automatically open your default web browser to the screening interface
    - Select AI model (OpenAI, Gemini, Mixtral, Llama3, Claude) and number of agents
    - Click "Start Screening"
 
-3. Results will be saved in:
-```
-AI_Output/[model_name]/screening_results.xlsx
-```
+3. Results will be saved in the output directory specified in the configuration.
 
 ## Key Components
 
 - `server.py`: Flask server handling web interface and configuration
-- `Screening.py`: Core screening logic and AI interaction
-- `auxiliary.py`: Helper functions for file operations
+- `screening_logic.py`: Core screening logic and AI interaction
+- `file_operations.py`: Helper functions for file operations
 - `static/index.html`: Web interface
-- `ask_AI.py`: AI model interaction layer
+- `ai_interaction.py`: AI model interaction layer
 
 ## File Structure
 
 ```
-CI-Review/
+GPT-Screening-Update/
 ├── server.py           # Web server
-├── Screening.py        # Core screening logic
-├── auxiliary.py        # Helper functions
-├── ask_AI.py           # AI interaction
+├── screening_logic.py  # Core screening logic
+├── file_operations.py  # Helper functions
+├── ai_interaction.py   # AI interaction
+├── data_processing.py  # Data processing functions
+├── config.py           # Configuration settings
 ├── requirements.txt    # Python dependencies
 ├── static/            
-│   └── index.html     # Web interface
-├── AI_Output/         # Results directory
-│   └── [model_name]/
-│       └── screening_results.xlsx
-└── ScreeningCriteria.csv  # Active screening criteria
+│   ├── index.html     # Web interface
+│   └── script.js      # Frontend JavaScript
+├── .gitignore         # Git ignore file
+└── README.md          # This file
 ```
 
 ## Input Format
@@ -153,6 +152,4 @@ Common issues:
 
 Feel free to submit issues and enhancement requests!
 
-## License
 
-[Add appropriate license information]
