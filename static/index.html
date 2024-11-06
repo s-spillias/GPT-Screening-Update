@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Screening Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="file"], input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .file-info {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .api-key-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .criteria-container {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .criteria-list {
+            list-style: none;
+            padding: 0;
+        }
+        .criteria-item {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .criteria-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .add-criteria-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .submit-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #1976D2;
+        }
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .remove-criteria {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+            display: block;
+        }
+        .status.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+            display: block;
+        }
+        .template-upload {
+            margin-bottom: 20px;
+        }
+        #screeningProgress {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        #progressTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #progressTable th, #progressTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #progressTable th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Paper Screening Interface</h1>
+        <form id="screeningForm">
+            <div class="form-group">
+                <label for="dataFile">Upload File with Titles and Abstracts:</label>
+                <input type="file" id="dataFile" name="data_file" accept=".csv,.xlsx,.xls" required>
+                <div class="file-info">Accepted formats: CSV (.csv) or Excel (.xlsx, .xls)</div>
+            </div>
+
+            <div class="template-upload">
+                <label for="templateFile">Upload Screening Criteria Template:</label>
+                <input type="file" id="templateFile" accept=".csv,.xlsx,.xls">
+                <div class="file-info">Upload Excel or CSV with criteria template structure</div>
+            </div>
+
+            <div class="api-key-section">
+                <div class="form-group">
+                    <label for="aiModel">Select AI Model:</label>
+                    <select id="aiModel" name="ai_model" required>
+                        <option value="">Select an AI model</option>
+                        <option value="gemini">Google Gemini</option>
+                        <option value="mixtral">Mixtral 8x7B</option>
+                        <option value="llama3">LLaMA 3</option>
+                        <option value="claude">Claude</option>
+                        <option value="aws_claude">AWS Claude</option>
+                        <option value="gemma2">Gemma 2</option>
+                        <option value="openai">OpenAI</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="numAgents">Number of AI Agents:</label>
+                    <input type="number" id="numAgents" name="num_agents" min="1" max="10" value="5" required>
+                    <div class="file-info">Number of AI agents to use for screening (1-10). More agents mean more false positives and less false negatives.</div>
+                </div>
+
+                <div id="apiKeyFields">
+                    <!-- Google API Key field -->
+                    <div class="google-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="googleKey">Google API Key:</label>
+                            <input type="text" id="googleKey" name="google_key" placeholder="Your Google API Key">
+                        </div>
+                    </div>
+
+                    <!-- Groq API Key field (for Mixtral and LLaMA) -->
+                    <div class="groq-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="groqKey">Groq API Key:</label>
+                            <input type="text" id="groqKey" name="groq_key" placeholder="Your Groq API Key">
+                        </div>
+                    </div>
+
+                    <!-- Anthropic API Key field -->
+                    <div class="anthropic-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="anthropicKey">Anthropic API Key:</label>
+                            <input type="text" id="anthropicKey" name="anthropic_key" placeholder="Your Anthropic API Key">
+                        </div>
+                    </div>
+                    <!-- OpenAI API Key field -->
+                    <div class="openai-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="openaiKey">OpenAI API Key:</label>
+                            <input type="text" id="openaiKey" name="openai_key" placeholder="Your OpenAI API Key">
+                        </div>
+                    </div>
+                    <!-- AWS Credentials -->
+                    <div class="aws-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="awsAccessKey">AWS Access Key ID:</label>
+                            <input type="text" id="awsAccessKey" name="aws_access_key" placeholder="Your AWS Access Key">
+                        </div>
+                        <div class="form-group">
+                            <label for="awsSecretKey">AWS Secret Access Key:</label>
+                            <input type="text" id="awsSecretKey" name="aws_secret_key" placeholder="Your AWS Secret Key">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="criteria-container">
+                <label>Screening Criteria:</label>
+                <button type="button" class="add-criteria-btn" onclick="addCriteria()">Add Screening Criterion</button>
+                <ul id="criteriaList" class="criteria-list">
+                    <!-- Criteria will be populated here -->
+                </ul>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Start Screening</button>
+        </form>
+        <div id="status" class="status"></div>
+
+        <!-- New section for displaying screening progress -->
+        <div id="screeningProgress" style="display: none;">
+            <h2>Screening Progress</h2>
+            <table id="progressTable">
+                <thead>
+                    <tr>
+                        <th>Paper Number</th>
+                        <th>Title</th>
+                        <th>Decision</th>
+                    </tr>
+                </thead>
+                <tbody id="progressBody">
+                    <!-- Progress data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
