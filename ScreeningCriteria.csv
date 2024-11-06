@@ -1,0 +1,6 @@
+﻿type,included,excluded
+Geographic location,"If the study area includes the Western Mediterranean Sea (i.e., the Mediterranean part of Spain, France, Italy, Marocco, Tunisia, and Algeria).  ",
+Language,If the studies are published in English,
+Environment,If the studies focus on the marine/coastal environment,If studies focus on the terrestrial environment
+Peer-reviewed,If they are peer-reviewed studies,
+Outcome,If the studies focus on the effect(s) of climate change,
