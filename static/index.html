@@ -237,6 +237,13 @@
                 </ul>
             </div>
 
+            <!-- New input field for pilot screen percentage -->
+            <div class="form-group">
+                <label for="pilotPercentage">Pilot Screen Percentage:</label>
+                <input type="number" id="pilotPercentage" name="pilot_percentage" min="1" max="100" value="100" required>
+                <div class="file-info">Enter the percentage of papers to include in the pilot screen (1-100).</div>
+            </div>
+
             <button type="submit" class="submit-btn" id="submitBtn">Start Screening</button>
         </form>
         <div id="status" class="status"></div>

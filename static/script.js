@@ -114,6 +114,10 @@ document.getElementById('screeningForm').addEventListener('submit', async (e) =>
         formData.append('criteria', JSON.stringify(manualCriteria));
     }
 
+    // Add pilot screen percentage to form data
+    const pilotPercentage = document.getElementById('pilotPercentage').value;
+    formData.append('pilot_percentage', pilotPercentage);
+
     try {
         const response = await fetch('/screen', {
             method: 'POST',

@@ -1,1 +1,1 @@
-{"model_to_use": "gemma2", "n_agents": 3, "proj_location": ".", "debug": false, "skip_criteria": true, "resume_from": 0}
+{"model_to_use": "gemma2", "n_agents": 3, "proj_location": ".", "debug": false, "skip_criteria": true, "resume_from": 134, "pilot_percentage": 2.0}

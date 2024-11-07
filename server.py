@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify, send_from_directory
 import os
+import sys
 import pandas as pd
 import json
 import webbrowser
 from threading import Timer
 from dotenv import load_dotenv
+import subprocess
 
 app = Flask(__name__, static_url_path='', static_folder='static')
 load_dotenv()
@@ -73,7 +75,8 @@ def create_screening_config(data):
         'proj_location': '.',  # Use current directory
         'debug': False,
         'skip_criteria': True,
-        'resume_from': last_paper + 1  # Add resume point
+        'resume_from': last_paper + 1,  # Add resume point
+        'pilot_percentage': float(data.get('pilot_percentage', 100))  # Add pilot percentage
     }
     
     with open('screening_config.json', 'w') as f:
@@ -174,7 +177,9 @@ def screen():
         screening_progress = []
 
         # Execute the screening script with the config
-        os.system('python main.py')
+        pilot_percentage = float(request.form.get('pilot_percentage', 100))
+        venv_python = sys.executable
+        subprocess.Popen([venv_python, 'main.py', str(pilot_percentage)])
 
         return jsonify({'message': 'Screening process started successfully'}), 200
 

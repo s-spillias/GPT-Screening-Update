@@ -6,7 +6,7 @@ import random
 import requests
 import base64
 from groq import Groq
-from openai import AzureOpenAI, OpenAI, AsyncAzureOpenAI, AsyncOpenAI
+from openai import OpenAI
 from dotenv import load_dotenv
 import google.generativeai as genai
 import anthropic
@@ -151,7 +151,7 @@ def ask_mixtral(prompt, max_tokens=200000):
     return output
 
 @exponential_backoff
-def ask_openai(prompt, max_tokens=200000):
+def ask_openai(prompt):
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
     
     completion = client.chat.completions.create(
@@ -160,7 +160,7 @@ def ask_openai(prompt, max_tokens=200000):
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=int(max_tokens) if max_tokens is not None else 200000
+        # max_tokens=int(max_tokens) if max_tokens is not None else 100000
     )
     
     output = completion.choices[0].message.content
@@ -182,6 +182,8 @@ def ask_ai(prompt, ai_model='gemini', max_tokens=None):
     elif ai_model == "mixtral":
         return ask_mixtral(prompt, max_tokens)
     elif ai_model == "openai":
-        return ask_openai(prompt, max_tokens)
+        return ask_openai(prompt)
     else:
         raise ValueError(f"Unknown AI model: {ai_model}")
+
+# ask_ai('why sky blue','openai')
