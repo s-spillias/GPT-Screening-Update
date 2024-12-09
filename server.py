@@ -11,8 +11,10 @@ import subprocess
 app = Flask(__name__, static_url_path='', static_folder='static')
 load_dotenv()
 
-# Global variable to store screening progress
+# Global variables to store screening progress and pilot data
 screening_progress = []
+pilot_papers = []
+current_pilot_index = 0
 
 def open_browser():
     webbrowser.open('http://127.0.0.1:5000/')
@@ -76,7 +78,8 @@ def create_screening_config(data):
         'debug': False,
         'skip_criteria': True,
         'resume_from': last_paper + 1,  # Add resume point
-        'pilot_percentage': float(data.get('pilot_percentage', 100))  # Add pilot percentage
+        'pilot_percentage': float(data.get('pilot_percentage', 100)),  # Add pilot percentage
+        'use_pilot': data.get('use_pilot') == 'true'  # Add pilot mode flag
     }
     
     with open('screening_config.json', 'w') as f:
@@ -173,15 +176,25 @@ def screen():
         os.makedirs(model_dir, exist_ok=True)
 
         # Clear previous screening progress
-        global screening_progress
+        global screening_progress, pilot_papers, current_pilot_index
         screening_progress = []
+        pilot_papers = []
+        current_pilot_index = 0
 
-        # Execute the screening script with the config
+        # Check if pilot mode is enabled
+        use_pilot = request.form.get('use_pilot') == 'true'
         pilot_percentage = float(request.form.get('pilot_percentage', 100))
-        venv_python = sys.executable
-        subprocess.Popen([venv_python, 'main.py', str(pilot_percentage)])
 
-        return jsonify({'message': 'Screening process started successfully'}), 200
+        if use_pilot:
+            # Prepare pilot papers
+            num_pilot_papers = int(len(df) * (pilot_percentage / 100))
+            pilot_papers = df.head(num_pilot_papers).to_dict('records')
+            return jsonify({'message': 'Pilot screening process started', 'pilot_papers': pilot_papers}), 200
+        else:
+            # Execute the screening script with the config
+            venv_python = sys.executable
+            subprocess.Popen([venv_python, 'main.py', str(pilot_percentage)])
+            return jsonify({'message': 'Screening process started successfully'}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -200,6 +213,48 @@ def update_screening_progress(paper_number, title, decision):
         'title': title,
         'decision': decision
     })
+
+@app.route('/ask_ai', methods=['POST'])
+def ask_ai():
+    """Endpoint to ask AI a question about a paper"""
+    data = request.json
+    paper_index = data.get('paper_index')
+    question = data.get('question')
+
+    if paper_index is None or question is None:
+        return jsonify({'error': 'Missing paper_index or question'}), 400
+
+    # TODO: Implement AI interaction logic here
+    # For now, we'll return a dummy response
+    ai_response = f"This is a dummy AI response for paper {paper_index} and question: {question}"
+
+    return jsonify({'response': ai_response}), 200
+
+@app.route('/decide_paper', methods=['POST'])
+def decide_paper():
+    """Endpoint to record user's decision on a paper"""
+    global current_pilot_index
+    data = request.json
+    paper_index = data.get('paper_index')
+    decision = data.get('decision')
+
+    if paper_index is None or decision is None:
+        return jsonify({'error': 'Missing paper_index or decision'}), 400
+
+    if paper_index != current_pilot_index:
+        return jsonify({'error': 'Invalid paper index'}), 400
+
+    # Record the decision
+    pilot_papers[paper_index]['user_decision'] = decision
+    current_pilot_index += 1
+
+    # If all pilot papers are processed, start the full screening
+    if current_pilot_index >= len(pilot_papers):
+        venv_python = sys.executable
+        subprocess.Popen([venv_python, 'main.py', '100'])  # Start full screening
+        return jsonify({'message': 'Pilot completed, starting full screening'}), 200
+
+    return jsonify({'message': 'Decision recorded successfully'}), 200
 
 if __name__ == '__main__':
     Timer(1, open_browser).start()

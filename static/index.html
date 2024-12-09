@@ -144,6 +144,16 @@
         #progressTable th {
             background-color: #f2f2f2;
         }
+        .pilot-mode {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-radius: 4px;
+        }
+        .pilot-mode label {
+            display: inline;
+            margin-left: 5px;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -235,13 +245,17 @@
                 <ul id="criteriaList" class="criteria-list">
                     <!-- Criteria will be populated here -->
                 </ul>
+
+            <div class="pilot-mode">
+                <input type="checkbox" id="usePilot" name="use_pilot">
+                <label for="usePilot">Use Pilot Mode</label>
+                <div class="file-info">Enable pilot mode for interactive screening with AI assistance.</div>
             </div>
 
-            <!-- New input field for pilot screen percentage -->
             <div class="form-group">
                 <label for="pilotPercentage">Pilot Screen Percentage:</label>
-                <input type="number" id="pilotPercentage" name="pilot_percentage" min="1" max="100" value="100" required>
-                <div class="file-info">Enter the percentage of papers to include in the pilot screen (1-100).</div>
+                <input type="number" id="pilotPercentage" name="pilot_percentage" min="1" max="100" value="10" required>
+                <div class="file-info">Enter the percentage of papers to include in the pilot screen (1-100). Only applicable when pilot mode is enabled.</div>
             </div>
 
             <button type="submit" class="submit-btn" id="submitBtn">Start Screening</button>
@@ -257,12 +271,26 @@
                         <th>Paper Number</th>
                         <th>Title</th>
                         <th>Decision</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="progressBody">
                     <!-- Progress data will be inserted here -->
                 </tbody>
             </table>
+        </div>
+
+        <!-- New section for pilot mode interaction -->
+        <div id="pilotInteraction" style="display: none;">
+            <h2>Pilot Mode Interaction</h2>
+            <div id="paperDetails"></div>
+            <div id="aiAssessment"></div>
+            <textarea id="userQuestion" rows="3" placeholder="Ask a question about this paper..."></textarea>
+            <button id="askAI">Ask AI</button>
+            <div id="aiResponse"></div>
+            <button id="includeButton">Include</button>
+            <button id="excludeButton">Exclude</button>
+            <button id="nextPaper">Next Paper</button>
         </div>
     </div>
 

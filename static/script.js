@@ -1,6 +1,9 @@
 // Global variable to store parsed criteria data
 let parsedCriteria = [];
 let screeningInProgress = false;
+let isPilotMode = false;
+let currentPaperIndex = 0;
+let pilotPapers = [];
 
 // Load config when page loads
 window.addEventListener('DOMContentLoaded', async () => {
@@ -45,6 +48,18 @@ window.addEventListener('DOMContentLoaded', async () => {
         // Add one empty criterion field if config load fails
         addCriteria();
     }
+
+    // Add event listener for pilot mode checkbox
+    document.getElementById('usePilot').addEventListener('change', function(e) {
+        isPilotMode = e.target.checked;
+        document.getElementById('pilotPercentage').disabled = !isPilotMode;
+    });
+
+    // Initialize pilot mode UI elements
+    document.getElementById('askAI').addEventListener('click', askAI);
+    document.getElementById('includeButton').addEventListener('click', () => decidePaper('include'));
+    document.getElementById('excludeButton').addEventListener('click', () => decidePaper('exclude'));
+    document.getElementById('nextPaper').addEventListener('click', showNextPaper);
 });
 
 function showApiFields(model) {
@@ -114,9 +129,9 @@ document.getElementById('screeningForm').addEventListener('submit', async (e) =>
         formData.append('criteria', JSON.stringify(manualCriteria));
     }
 
-    // Add pilot screen percentage to form data
-    const pilotPercentage = document.getElementById('pilotPercentage').value;
-    formData.append('pilot_percentage', pilotPercentage);
+    // Add pilot mode and percentage to form data
+    formData.append('use_pilot', isPilotMode);
+    formData.append('pilot_percentage', document.getElementById('pilotPercentage').value);
 
     try {
         const response = await fetch('/screen', {
@@ -127,10 +142,16 @@ document.getElementById('screeningForm').addEventListener('submit', async (e) =>
         const data = await response.json();
         
         if (response.ok) {
-            showStatus('Screening process started successfully! Check the output folder for results.');
-            screeningInProgress = true;
-            document.getElementById('screeningProgress').style.display = 'block';
-            fetchScreeningProgress();
+            if (isPilotMode) {
+                showStatus('Pilot screening process started. Prepare for interactive screening.');
+                pilotPapers = data.pilot_papers;
+                startPilotMode();
+            } else {
+                showStatus('Screening process started successfully! Check the output folder for results.');
+                screeningInProgress = true;
+                document.getElementById('screeningProgress').style.display = 'block';
+                fetchScreeningProgress();
+            }
         } else {
             showStatus(data.error || 'Error starting screening process', true);
         }
@@ -142,6 +163,90 @@ document.getElementById('screeningForm').addEventListener('submit', async (e) =>
         submitBtn.textContent = 'Start Screening';
     }
 });
+
+function startPilotMode() {
+    document.getElementById('pilotInteraction').style.display = 'block';
+    currentPaperIndex = 0;
+    showNextPaper();
+}
+
+function showNextPaper() {
+    if (currentPaperIndex < pilotPapers.length) {
+        const paper = pilotPapers[currentPaperIndex];
+        document.getElementById('paperDetails').innerHTML = `
+            <h3>${paper.title}</h3>
+            <p><strong>Abstract:</strong> ${paper.abstract}</p>
+        `;
+        document.getElementById('aiAssessment').innerHTML = `
+            <p><strong>AI Assessment:</strong> ${paper.ai_assessment}</p>
+        `;
+        document.getElementById('userQuestion').value = '';
+        document.getElementById('aiResponse').innerHTML = '';
+    } else {
+        finishPilotMode();
+    }
+}
+
+async function askAI() {
+    const question = document.getElementById('userQuestion').value;
+    if (!question) return;
+
+    try {
+        const response = await fetch('/ask_ai', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                paper_index: currentPaperIndex,
+                question: question
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get AI response');
+        }
+
+        const data = await response.json();
+        document.getElementById('aiResponse').innerHTML = `<p><strong>AI Response:</strong> ${data.response}</p>`;
+    } catch (error) {
+        console.error('Error asking AI:', error);
+        document.getElementById('aiResponse').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
+}
+
+async function decidePaper(decision) {
+    try {
+        const response = await fetch('/decide_paper', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                paper_index: currentPaperIndex,
+                decision: decision
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to submit decision');
+        }
+
+        currentPaperIndex++;
+        showNextPaper();
+    } catch (error) {
+        console.error('Error deciding paper:', error);
+        showStatus('Error submitting decision: ' + error.message, true);
+    }
+}
+
+function finishPilotMode() {
+    document.getElementById('pilotInteraction').style.display = 'none';
+    showStatus('Pilot screening completed. Full screening will now begin.');
+    screeningInProgress = true;
+    document.getElementById('screeningProgress').style.display = 'block';
+    fetchScreeningProgress();
+}
 
 // Updated function to handle template file upload
 function handleTemplateUpload(event) {
@@ -230,3 +335,4 @@ async function fetchScreeningProgress() {
         showStatus('Error fetching screening progress: ' + error.message, true);
     }
 }
+
